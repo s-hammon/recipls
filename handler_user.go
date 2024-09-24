@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/s-hammon/recipls/internal/database"
 )
@@ -22,18 +23,33 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nowDT := time.Now().UTC()
-	userUUID, err := uuid.NewV4()
-	if err != nil {
+	userUUID := uuid.New().String()
+	id := pgtype.UUID{}
+	if err := id.Scan(userUUID); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	nowDT := time.Now().UTC()
+	createdAt := pgtype.Timestamp{}
+	if err := createdAt.Scan(nowDT); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	updatedAt := pgtype.Timestamp{}
+	if err := updatedAt.Scan(nowDT); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	userParams := database.CreateUserParams{
-		ID:        pgtype.UUID{Bytes: [16]byte(userUUID.Bytes())},
-		CreatedAt: pgtype.Timestamp{Time: nowDT},
-		UpdatedAt: pgtype.Timestamp{Time: nowDT},
+		ID:        id,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 		Name:      params.Name,
 	}
+
+	fmt.Printf("creating user with id: %b\ncreated_at: %v\n", userParams.ID.Bytes, userParams.CreatedAt.Time)
 
 	user, err := a.DB.CreateUser(r.Context(), userParams)
 	if err != nil {
@@ -42,4 +58,8 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusCreated, user)
+}
+
+func (a *apiConfig) handleGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
+	respondJSON(w, http.StatusOK, dbToUser(user))
 }

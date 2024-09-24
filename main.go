@@ -10,10 +10,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/s-hammon/recipls/internal/database"
 
-	pgxuuid "github.com/jackc/pgx-gofrs-uuid"
+	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type apiConfig struct {
@@ -30,19 +29,20 @@ func main() {
 		log.Fatal("CONN_STRING must be set")
 	}
 
-	db, err := pgx.Connect(context.Background(), dbURL)
+	config, err := pgxpool.ParseConfig(dbURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error parsing db url: %v", err)
 	}
-	dbConf, err := pgxpool.ParseConfig(dbURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-	dbConf.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-		pgxuuid.Register(conn.TypeMap())
+	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxUUID.Register(conn.TypeMap())
 		return nil
 	}
-	defer db.Close(context.Background())
+
+	db, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	dbQueries := database.New(db)
 	cfg := apiConfig{DB: dbQueries}
@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
+	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
 
 	srv := &http.Server{
 		Addr:    ":" + "8080",
