@@ -11,7 +11,7 @@ clean:
 	@go mod tidy
 
 up:
-	goose -dir ${SCHEMA_DIR} ${DRIVER} ${CONN_STRING} up
+	@goose -dir ${SCHEMA_DIR} ${DRIVER} ${CONN_STRING} up
 
 down:
 	@goose -dir ${SCHEMA_DIR} ${DRIVER} ${CONN_STRING} down

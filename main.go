@@ -54,6 +54,8 @@ func main() {
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
 
+	mux.HandleFunc("POST /v1/recipes", cfg.middlewareAuth(cfg.handlerCreateRecipe))
+
 	srv := &http.Server{
 		Addr:    ":" + "8080",
 		Handler: mux,
