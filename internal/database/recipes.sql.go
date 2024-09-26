@@ -108,6 +108,41 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 	return items, nil
 }
 
+const getRecipesWithLimit = `-- name: GetRecipesWithLimit :many
+SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id FROM recipes
+LIMIT $1
+`
+
+func (q *Queries) GetRecipesWithLimit(ctx context.Context, limit int32) ([]Recipe, error) {
+	rows, err := q.db.Query(ctx, getRecipesWithLimit, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Recipe
+	for rows.Next() {
+		var i Recipe
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Description,
+			&i.Ingredients,
+			&i.Instructions,
+			&i.CategoryID,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateRecipe = `-- name: UpdateRecipe :one
 UPDATE recipes
 SET updated_at = $2, title = $3, description = $4, ingredients = $5, instructions = $6, category_id = $7

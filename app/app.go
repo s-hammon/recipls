@@ -14,11 +14,12 @@ type App struct {
 	RSSFeed Feed
 }
 
-func New(xmlPath, title, link, description string) (*App, error) {
+func New(xmlPath, title, domain, description string) (*App, error) {
 	if err := checkPath(xmlPath); err != nil {
 		return nil, err
 	}
 
+	link := filepath.Join(domain, index)
 	a := App{
 		RSSPath: filepath.Join(xmlPath, index),
 		RSSFeed: Feed{

@@ -66,3 +66,27 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 	}
 	respondJSON(w, http.StatusCreated, resp)
 }
+
+func (a *apiConfig) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
+	respID := r.PathValue("id")
+
+	id, err := uuid.Parse(respID)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		return
+	}
+
+	dbRecipe, err := a.DB.GetRecipeByID(r.Context(), pgtype.UUID{Bytes: id, Valid: true})
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Printf("recipe not found: %v\n", id)
+			respondError(w, http.StatusNotFound, "recipe not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	recipe := dbToRecipe(dbRecipe)
+	respondJSON(w, http.StatusOK, recipe)
+}

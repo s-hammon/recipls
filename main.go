@@ -16,7 +16,12 @@ import (
 	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
 )
 
+const port = ":8080"
+
 const xmlPath = "content/xml"
+const xmlName = "Recipls"
+const xmlDomain = "http://localhost" + port
+const xmlDescription = "A recipe feed"
 
 type apiConfig struct {
 	DB  *database.Queries
@@ -49,7 +54,7 @@ func main() {
 	defer db.Close()
 
 	dbQueries := database.New(db)
-	app, err := app.New(xmlPath, "Recipls", "http://localhost:8080/index.xml", "A recipe feed")
+	app, err := app.New(xmlPath, xmlName, xmlDomain, xmlDescription)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,21 +62,23 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 	mux.HandleFunc("GET /index.xml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, app.RSSPath)
 	})
+
+	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
 
 	mux.HandleFunc("POST /v1/recipes", cfg.middlewareAuth(cfg.handlerCreateRecipe))
+	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
 
 	srv := &http.Server{
-		Addr:    ":" + "8080",
+		Addr:    port,
 		Handler: mux,
 	}
 
-	fmt.Println("Listening on port :8080...")
+	fmt.Printf("Listening on port %s...", port)
 	log.Fatal(srv.ListenAndServe())
 }

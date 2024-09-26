@@ -6,6 +6,10 @@ RETURNING id, created_at, title;
 -- name: GetRecipes :many
 SELECT * FROM recipes;
 
+-- name: GetRecipesWithLimit :many
+SELECT * FROM recipes
+LIMIT $1;
+
 -- name: GetRecipeByID :one
 SELECT * FROM recipes
 WHERE id = $1 LIMIT 1;
