@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/xml"
@@ -38,7 +38,7 @@ func TestGenerateRSSFeed(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	want := []byte(xml.Header + string(xmlData))
-	got, err := feed.generateRSSFeed()
+	got, err := feed.generateRSSChannel()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

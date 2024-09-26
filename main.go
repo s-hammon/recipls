@@ -7,16 +7,20 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/s-hammon/recipls/app"
 	"github.com/s-hammon/recipls/internal/database"
 
 	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const xmlPath = "content/xml"
+
 type apiConfig struct {
-	DB *database.Queries
+	DB  *database.Queries
+	App *app.App
 }
 
 func main() {
@@ -45,11 +49,18 @@ func main() {
 	defer db.Close()
 
 	dbQueries := database.New(db)
-	cfg := apiConfig{DB: dbQueries}
+	app, err := app.New(xmlPath, "Recipls", "http://localhost:8080/index.xml", "A recipe feed")
+	if err != nil {
+		log.Fatal(err)
+	}
+	cfg := apiConfig{DB: dbQueries, App: app}
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
+	mux.HandleFunc("GET /index.xml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, app.RSSPath)
+	})
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))

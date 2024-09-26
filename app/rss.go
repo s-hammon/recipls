@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/xml"
@@ -20,12 +20,18 @@ type Channel struct {
 	Items       []Item    `xml:"item"`
 }
 
-func (c Channel) generateRSSFeed() ([]byte, error) {
+func (c Channel) generateRSSChannel() ([]byte, error) {
 	xmlData, err := xml.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return nil, err
 	}
 
-	b := []byte(xml.Header + string(xmlData))
-	return b, nil
+	rss := []byte(xml.Header + string(xmlData))
+	return rss, nil
+}
+
+type Feed struct {
+	XMLName xml.Name `xml:"rss"`
+	Version string   `xml:"version,attr"`
+	Channel Channel  `xml:"channel"`
 }
