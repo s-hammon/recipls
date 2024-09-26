@@ -12,8 +12,8 @@ import (
 )
 
 const createRecipe = `-- name: CreateRecipe :one
-INSERT INTO recipes (id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO recipes (id, created_at, updated_at, title, description, difficulty, ingredients, instructions, category_id, user_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING id, created_at, title
 `
 
@@ -23,6 +23,7 @@ type CreateRecipeParams struct {
 	UpdatedAt    pgtype.Timestamp
 	Title        string
 	Description  string
+	Difficulty   pgtype.Int4
 	Ingredients  string
 	Instructions string
 	CategoryID   pgtype.UUID
@@ -42,6 +43,7 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Cre
 		arg.UpdatedAt,
 		arg.Title,
 		arg.Description,
+		arg.Difficulty,
 		arg.Ingredients,
 		arg.Instructions,
 		arg.CategoryID,
@@ -53,7 +55,7 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Cre
 }
 
 const getRecipeByID = `-- name: GetRecipeByID :one
-SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id FROM recipes
+SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
 WHERE id = $1 LIMIT 1
 `
 
@@ -70,12 +72,13 @@ func (q *Queries) GetRecipeByID(ctx context.Context, id pgtype.UUID) (Recipe, er
 		&i.Instructions,
 		&i.CategoryID,
 		&i.UserID,
+		&i.Difficulty,
 	)
 	return i, err
 }
 
 const getRecipes = `-- name: GetRecipes :many
-SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id FROM recipes
+SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
 `
 
 func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
@@ -97,6 +100,7 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 			&i.Instructions,
 			&i.CategoryID,
 			&i.UserID,
+			&i.Difficulty,
 		); err != nil {
 			return nil, err
 		}
@@ -109,7 +113,7 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 }
 
 const getRecipesWithLimit = `-- name: GetRecipesWithLimit :many
-SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id FROM recipes
+SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
 LIMIT $1
 `
 
@@ -132,6 +136,7 @@ func (q *Queries) GetRecipesWithLimit(ctx context.Context, limit int32) ([]Recip
 			&i.Instructions,
 			&i.CategoryID,
 			&i.UserID,
+			&i.Difficulty,
 		); err != nil {
 			return nil, err
 		}

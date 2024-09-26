@@ -25,6 +25,7 @@ type Recipe struct {
 	Instructions string
 	CategoryID   pgtype.UUID
 	UserID       pgtype.UUID
+	Difficulty   pgtype.Int4
 }
 
 type User struct {

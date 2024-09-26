@@ -16,6 +16,7 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 	type parameters struct {
 		Title        string    `json:"title"`
 		Description  string    `json:"description"`
+		Difficulty   int       `json:"difficulty"`
 		Ingredients  string    `json:"ingredients"`
 		Instructions string    `json:"instructions"`
 		CategoryID   uuid.UUID `json:"category_id"`
