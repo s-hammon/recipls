@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,6 +59,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("using XML path: %s\n", app.RSSPath)
 	cfg := apiConfig{DB: dbQueries, App: app}
 
 	mux := http.NewServeMux()
@@ -79,6 +81,9 @@ func main() {
 		Handler: mux,
 	}
 
-	fmt.Printf("Listening on port %s...", port)
+	const requestInterval = time.Minute * 10
+	go cfg.rssUpdateWorker(requestInterval)
+
+	fmt.Printf("Listening on port %s...\n", port)
 	log.Fatal(srv.ListenAndServe())
 }

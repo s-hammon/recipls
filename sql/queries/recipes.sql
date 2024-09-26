@@ -8,6 +8,7 @@ SELECT * FROM recipes;
 
 -- name: GetRecipesWithLimit :many
 SELECT * FROM recipes
+ORDER BY created_at DESC
 LIMIT $1;
 
 -- name: GetRecipeByID :one

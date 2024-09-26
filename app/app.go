@@ -43,8 +43,8 @@ func New(xmlPath, title, domain, description string) (*App, error) {
 	return &a, nil
 }
 
-func (a *App) AddItem(i Item) error {
-	a.RSSFeed.Channel.Items = append(a.RSSFeed.Channel.Items, i)
+func (a *App) AddItems(items []Item) error {
+	a.RSSFeed.Channel.Items = items
 	rss, err := a.RSSFeed.Channel.generateRSSChannel()
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (a *App) AddItem(i Item) error {
 }
 
 func (a *App) RefreshRSS(rss []byte) error {
-	if err := checkPath(filepath.Base(a.RSSPath)); err != nil {
+	if err := checkPath(filepath.Dir(a.RSSPath)); err != nil {
 		return err
 	}
 

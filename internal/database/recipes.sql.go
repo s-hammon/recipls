@@ -114,6 +114,7 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 
 const getRecipesWithLimit = `-- name: GetRecipesWithLimit :many
 SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
+ORDER BY created_at DESC
 LIMIT $1
 `
 
