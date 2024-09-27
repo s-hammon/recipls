@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/s-hammon/recipls/app"
@@ -71,10 +69,4 @@ func (a *apiConfig) rssUpdateWorker(requestInterval time.Duration) {
 
 		log.Println("RSS feed updated")
 	}
-}
-
-func getDifficultyString(difficulty int) string {
-	star := []byte("\u2b50")
-	r, _ := utf8.DecodeRune(star)
-	return strings.Repeat(string(r), difficulty)
 }

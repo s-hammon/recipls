@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -39,4 +40,10 @@ func timeToPgType(t time.Time) pgtype.Timestamp {
 
 func intToPgType(i int) pgtype.Int4 {
 	return pgtype.Int4{Int32: int32(i), Valid: true}
+}
+
+func getDifficultyString(difficulty int) string {
+	star := []byte("\u2b50")
+	r, _ := utf8.DecodeRune(star)
+	return strings.Repeat(string(r), difficulty)
 }
