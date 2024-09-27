@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/s-hammon/recipls/internal/auth"
 	"github.com/s-hammon/recipls/internal/database"
@@ -27,4 +30,25 @@ func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
 
 		handler(w, r, user)
 	}
+}
+
+func (a *apiConfig) middlewareLogger(handler http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		mw := &mwResponseWriter{w, http.StatusOK}
+		handler.ServeHTTP(mw, r)
+
+		msg := fmt.Sprintf("%d %s %s", mw.StatusCode, r.Method, r.URL)
+		slog.Info(msg, "duration", time.Since(start))
+	}
+}
+
+type mwResponseWriter struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+func (w *mwResponseWriter) WriteHeader(code int) {
+	w.StatusCode = code
+	w.ResponseWriter.WriteHeader(code)
 }

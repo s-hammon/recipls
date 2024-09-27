@@ -122,9 +122,11 @@ func main() {
 	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareAuth(cfg.handlerUpdateRecipe))
 	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
 
+	loggedMux := cfg.middlewareLogger(mux)
+
 	srv := &http.Server{
 		Addr:    port,
-		Handler: mux,
+		Handler: loggedMux,
 	}
 
 	const requestInterval = time.Minute * 10
