@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/s-hammon/recipls/internal/database"
 )
 
@@ -29,7 +28,7 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	category, err := a.DB.GetCategoryByID(r.Context(), pgtype.UUID{Bytes: params.CategoryID, Valid: true})
+	category, err := a.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			respondError(w, http.StatusNotFound, "invalid category_id")
@@ -40,9 +39,9 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 	}
 
 	recipe, err := a.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
-		ID:           pgtype.UUID{Bytes: uuid.New(), Valid: true},
-		CreatedAt:    pgtype.Timestamp{Time: time.Now().UTC(), Valid: true},
-		UpdatedAt:    pgtype.Timestamp{Time: time.Now().UTC(), Valid: true},
+		ID:           uuidToPgType(uuid.New()),
+		CreatedAt:    timeToPgType(time.Now().UTC()),
+		UpdatedAt:    timeToPgType(time.Now().UTC()),
 		Title:        params.Title,
 		Description:  params.Description,
 		Ingredients:  params.Ingredients,
@@ -70,15 +69,13 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 }
 
 func (a *apiConfig) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
-	respID := r.PathValue("id")
-
-	id, err := uuid.Parse(respID)
+	id, err := getRequestID(r)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
 
-	dbRecipe, err := a.DB.GetRecipeByID(r.Context(), pgtype.UUID{Bytes: id, Valid: true})
+	dbRecipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			fmt.Printf("recipe not found: %v\n", id)

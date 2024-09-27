@@ -8,13 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/s-hammon/recipls/app"
@@ -82,32 +78,27 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
-		respID := r.PathValue("id")
-		id, err := uuid.Parse(respID)
+		id, err := getRequestID(r)
 		if err != nil {
-			respondError(w, http.StatusBadRequest, "invalid recipe id")
+			respondError(w, http.StatusNotFound, "recipe not found 😔")
 			return
 		}
 
-		recipeDB, err := cfg.DB.GetRecipeByID(r.Context(), pgtype.UUID{Bytes: id, Valid: true})
+		recipeDB, err := cfg.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "error getting recipe")
 			return
 		}
 		recipe := dbToRecipe(recipeDB)
 
-		userDB, err := cfg.DB.GetUserByID(r.Context(), pgtype.UUID{Bytes: recipe.UserID, Valid: true})
+		userDB, err := cfg.DB.GetUserByID(r.Context(), uuidToPgType(recipe.UserID))
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "error getting user")
 			return
 		}
 		user := dbToUser(userDB)
 
-		fp := filepath.Join("templates", "recipe.html")
-		tmpl := template.Must(template.New("recipe.html").Funcs(template.FuncMap{
-			"splitLines": splitLines,
-		}).ParseFiles(fp))
-
+		tmpl := getTemplate("recipe.html", template.FuncMap{"splitLines": splitLines})
 		data := struct {
 			Recipe Recipe
 			User   User
@@ -115,10 +106,10 @@ func main() {
 			Recipe: recipe,
 			User:   user,
 		}
+
 		if err := tmpl.Execute(w, data); err != nil {
 			log.Printf("error executing template: %v", err)
 			respondError(w, http.StatusInternalServerError, err.Error())
-			return
 		}
 	})
 
@@ -140,8 +131,4 @@ func main() {
 
 	fmt.Printf("Listening on port %s...\n", port)
 	log.Fatal(srv.ListenAndServe())
-}
-
-func splitLines(s string) []string {
-	return strings.Split(s, "\n")
 }

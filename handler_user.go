@@ -2,12 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/s-hammon/recipls/internal/database"
 )
 
@@ -23,35 +21,12 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userUUID := uuid.New().String()
-	id := pgtype.UUID{}
-	if err := id.Scan(userUUID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	nowDT := time.Now().UTC()
-	createdAt := pgtype.Timestamp{}
-	if err := createdAt.Scan(nowDT); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	updatedAt := pgtype.Timestamp{}
-	if err := updatedAt.Scan(nowDT); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	userParams := database.CreateUserParams{
-		ID:        id,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
+	user, err := a.DB.CreateUser(r.Context(), database.CreateUserParams{
+		ID:        uuidToPgType(uuid.New()),
+		CreatedAt: timeToPgType(time.Now().UTC()),
+		UpdatedAt: timeToPgType(time.Now().UTC()),
 		Name:      params.Name,
-	}
-
-	fmt.Printf("creating user with id: %b\ncreated_at: %v\n", userParams.ID.Bytes, userParams.CreatedAt.Time)
-
-	user, err := a.DB.CreateUser(r.Context(), userParams)
+	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
