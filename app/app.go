@@ -61,14 +61,6 @@ func (a *App) RefreshRSS(rss []byte) error {
 	return os.WriteFile(a.RSSPath, rss, os.ModePerm)
 }
 
-func checkPath(path string) error {
-	if _, err := os.Stat(path); err != nil {
-		return os.MkdirAll(path, os.ModePerm)
-	}
-
-	return nil
-}
-
 func (a *App) compile() error {
 	xmlData, err := xml.MarshalIndent(a.RSSFeed, "", "  ")
 	if err != nil {
@@ -81,4 +73,12 @@ func (a *App) compile() error {
 	}
 
 	return os.WriteFile(a.RSSPath, b, os.ModePerm)
+}
+
+func checkPath(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		return os.MkdirAll(path, os.ModePerm)
+	}
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/s-hammon/recipls/internal/auth"
@@ -38,8 +39,11 @@ func (a *apiConfig) middlewareLogger(handler http.Handler) http.HandlerFunc {
 		mw := &mwResponseWriter{w, http.StatusOK}
 		handler.ServeHTTP(mw, r)
 
-		msg := fmt.Sprintf("%d %s %s", mw.StatusCode, r.Method, r.URL)
+		msg := fmt.Sprintf("%d %s %s", mw.StatusCode, r.Method, r.URL.Path)
 		slog.Info(msg, "duration", time.Since(start))
+		if strings.Contains(r.URL.Path, "/static/") {
+			fmt.Println()
+		}
 	}
 }
 

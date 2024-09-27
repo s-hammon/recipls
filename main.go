@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -77,41 +76,7 @@ func main() {
 		http.ServeFile(w, r, app.RSSPath)
 	})
 
-	mux.HandleFunc("GET /recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id, err := getRequestID(r)
-		if err != nil {
-			respondError(w, http.StatusNotFound, "recipe not found 😔")
-			return
-		}
-
-		recipeDB, err := cfg.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, "error getting recipe")
-			return
-		}
-		recipe := dbToRecipe(recipeDB)
-
-		userDB, err := cfg.DB.GetUserByID(r.Context(), uuidToPgType(recipe.UserID))
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, "error getting user")
-			return
-		}
-		user := dbToUser(userDB)
-
-		tmpl := getTemplate("recipe.html", template.FuncMap{"splitLines": splitLines})
-		data := struct {
-			Recipe Recipe
-			User   User
-		}{
-			Recipe: recipe,
-			User:   user,
-		}
-
-		if err := tmpl.Execute(w, data); err != nil {
-			log.Printf("error executing template: %v", err)
-			respondError(w, http.StatusInternalServerError, err.Error())
-		}
-	})
+	mux.HandleFunc("GET /recipes/{id}", cfg.renderRecipeTemplate)
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 
