@@ -54,6 +54,16 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Cre
 	return i, err
 }
 
+const deleteRecipe = `-- name: DeleteRecipe :exec
+DELETE FROM recipes
+WHERE id = $1
+`
+
+func (q *Queries) DeleteRecipe(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRecipe, id)
+	return err
+}
+
 const getRecipeByID = `-- name: GetRecipeByID :one
 SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
 WHERE id = $1 LIMIT 1

@@ -153,6 +153,35 @@ func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, 
 	respondJSON(w, http.StatusNoContent, nil)
 }
 
+func (a *apiConfig) handlerDeleteRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
+	id, err := getRequestID(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		return
+	}
+
+	recipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			respondError(w, http.StatusNotFound, "recipe not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !belongsToUser(user, recipe) {
+		respondError(w, http.StatusForbidden, "you do not have permission to delete this recipe")
+		return
+	}
+
+	if err := a.DB.DeleteRecipe(r.Context(), uuidToPgType(id)); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusNoContent, nil)
+}
+
 func belongsToUser(user database.User, recipe database.Recipe) bool {
 	return user.ID == recipe.UserID
 }
