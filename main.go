@@ -2,13 +2,19 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/s-hammon/recipls/app"
@@ -28,6 +34,9 @@ type apiConfig struct {
 	DB  *database.Queries
 	App *app.App
 }
+
+//go:embed static/*
+var staticFiles embed.FS
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -59,13 +68,58 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("using XML path: %s\n", app.RSSPath)
 	cfg := apiConfig{DB: dbQueries, App: app}
 
 	mux := http.NewServeMux()
+	mux.Handle("/static/", http.FileServer(http.FS(staticFiles)))
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "index.html")
+	})
 
 	mux.HandleFunc("GET /index.xml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, app.RSSPath)
+	})
+
+	mux.HandleFunc("GET /recipes/{id}", func(w http.ResponseWriter, r *http.Request) {
+		respID := r.PathValue("id")
+		id, err := uuid.Parse(respID)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid recipe id")
+			return
+		}
+
+		recipeDB, err := cfg.DB.GetRecipeByID(r.Context(), pgtype.UUID{Bytes: id, Valid: true})
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "error getting recipe")
+			return
+		}
+		recipe := dbToRecipe(recipeDB)
+
+		userDB, err := cfg.DB.GetUserByID(r.Context(), pgtype.UUID{Bytes: recipe.UserID, Valid: true})
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "error getting user")
+			return
+		}
+		user := dbToUser(userDB)
+
+		fp := filepath.Join("templates", "recipe.html")
+		tmpl := template.Must(template.New("recipe.html").Funcs(template.FuncMap{
+			"splitLines": splitLines,
+		}).ParseFiles(fp))
+
+		data := struct {
+			Recipe Recipe
+			User   User
+		}{
+			Recipe: recipe,
+			User:   user,
+		}
+		if err := tmpl.Execute(w, data); err != nil {
+			log.Printf("error executing template: %v", err)
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	})
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
@@ -86,4 +140,8 @@ func main() {
 
 	fmt.Printf("Listening on port %s...\n", port)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func splitLines(s string) []string {
+	return strings.Split(s, "\n")
 }

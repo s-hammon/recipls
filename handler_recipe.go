@@ -21,11 +21,6 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		Instructions string    `json:"instructions"`
 		CategoryID   uuid.UUID `json:"category_id"`
 	}
-	type response struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		Title     string    `json:"title"`
-	}
 
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -60,11 +55,17 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
+	type response struct {
+		ID        uuid.UUID `json:"id"`
+		CreatedAt time.Time `json:"created_at"`
+		Title     string    `json:"title"`
+	}
 	resp := response{
 		ID:        recipe.ID.Bytes,
 		CreatedAt: recipe.CreatedAt.Time,
 		Title:     recipe.Title,
 	}
+
 	respondJSON(w, http.StatusCreated, resp)
 }
 
