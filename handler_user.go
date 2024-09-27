@@ -11,7 +11,9 @@ import (
 
 func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name string `json:"name"`
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -26,6 +28,8 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: timeToPgType(time.Now().UTC()),
 		UpdatedAt: timeToPgType(time.Now().UTC()),
 		Name:      params.Name,
+		Email:     params.Email,
+		Password:  params.Password,
 	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())

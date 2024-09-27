@@ -79,6 +79,7 @@ func main() {
 	mux.HandleFunc("GET /recipes/{id}", cfg.renderRecipeTemplate)
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
+	mux.HandleFunc("POST /v1/login", cfg.handlerLogin)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))

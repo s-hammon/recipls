@@ -28,10 +28,18 @@ type Recipe struct {
 	Difficulty   pgtype.Int4
 }
 
+type Token struct {
+	UserID    pgtype.UUID
+	Value     string
+	ExpiresAt pgtype.Timestamp
+}
+
 type User struct {
 	ID        pgtype.UUID
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 	Name      string
 	ApiKey    string
+	Email     string
+	Password  string
 }
