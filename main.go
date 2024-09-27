@@ -66,9 +66,9 @@ func main() {
 	cfg := apiConfig{DB: dbQueries, App: app}
 
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.FileServer(http.FS(staticFiles)))
+	mux.Handle("GET /static/", http.FileServer(http.FS(staticFiles)))
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})
 
