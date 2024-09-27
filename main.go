@@ -119,6 +119,7 @@ func main() {
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
 
 	mux.HandleFunc("POST /v1/recipes", cfg.middlewareAuth(cfg.handlerCreateRecipe))
+	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareAuth(cfg.handlerUpdateRecipe))
 	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
 
 	srv := &http.Server{

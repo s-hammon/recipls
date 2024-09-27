@@ -17,6 +17,6 @@ WHERE id = $1 LIMIT 1;
 
 -- name: UpdateRecipe :one
 UPDATE recipes
-SET updated_at = $2, title = $3, description = $4, ingredients = $5, instructions = $6, category_id = $7
+SET updated_at = $2, title = $3, description = $4, ingredients = $5, instructions = $6, category_id = $7, difficulty = $8
 WHERE id = $1
 RETURNING id, updated_at, title;

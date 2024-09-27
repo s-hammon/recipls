@@ -151,7 +151,7 @@ func (q *Queries) GetRecipesWithLimit(ctx context.Context, limit int32) ([]Recip
 
 const updateRecipe = `-- name: UpdateRecipe :one
 UPDATE recipes
-SET updated_at = $2, title = $3, description = $4, ingredients = $5, instructions = $6, category_id = $7
+SET updated_at = $2, title = $3, description = $4, ingredients = $5, instructions = $6, category_id = $7, difficulty = $8
 WHERE id = $1
 RETURNING id, updated_at, title
 `
@@ -164,6 +164,7 @@ type UpdateRecipeParams struct {
 	Ingredients  string
 	Instructions string
 	CategoryID   pgtype.UUID
+	Difficulty   pgtype.Int4
 }
 
 type UpdateRecipeRow struct {
@@ -181,6 +182,7 @@ func (q *Queries) UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Upd
 		arg.Ingredients,
 		arg.Instructions,
 		arg.CategoryID,
+		arg.Difficulty,
 	)
 	var i UpdateRecipeRow
 	err := row.Scan(&i.ID, &i.UpdatedAt, &i.Title)

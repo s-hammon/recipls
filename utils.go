@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const templatePath = "template"
+const templatePath = "templates"
 
 func getTemplate(fname string, funcs template.FuncMap) *template.Template {
 	fp := filepath.Join(templatePath, fname)
@@ -35,4 +35,8 @@ func uuidToPgType(id uuid.UUID) pgtype.UUID {
 
 func timeToPgType(t time.Time) pgtype.Timestamp {
 	return pgtype.Timestamp{Time: t, Valid: true}
+}
+
+func intToPgType(i int) pgtype.Int4 {
+	return pgtype.Int4{Int32: int32(i), Valid: true}
 }

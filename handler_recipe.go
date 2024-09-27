@@ -89,3 +89,70 @@ func (a *apiConfig) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request)
 	recipe := dbToRecipe(dbRecipe)
 	respondJSON(w, http.StatusOK, recipe)
 }
+
+func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
+	id, err := getRequestID(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id parameter")
+	}
+
+	recipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			respondError(w, http.StatusNotFound, "recipe not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !belongsToUser(user, recipe) {
+		respondError(w, http.StatusForbidden, "you do not have permission to update this recipe")
+		return
+	}
+
+	type parameters struct {
+		Title        string    `json:"title"`
+		Description  string    `json:"description"`
+		Difficulty   int       `json:"difficulty"`
+		Ingredients  string    `json:"ingredients"`
+		Instructions string    `json:"instructions"`
+		CategoryID   uuid.UUID `json:"category_id"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := parameters{}
+	if err := decoder.Decode(&params); err != nil {
+		respondError(w, http.StatusBadRequest, fmt.Sprintf("invalid request: %v", err))
+		return
+	}
+
+	category, err := a.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			respondError(w, http.StatusNotFound, "invalid category_id")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if _, err = a.DB.UpdateRecipe(r.Context(), database.UpdateRecipeParams{
+		ID:           uuidToPgType(id),
+		UpdatedAt:    timeToPgType(time.Now().UTC()),
+		Title:        params.Title,
+		Description:  params.Description,
+		Difficulty:   intToPgType(params.Difficulty),
+		Ingredients:  params.Ingredients,
+		Instructions: params.Instructions,
+		CategoryID:   category.ID,
+	}); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusNoContent, nil)
+}
+
+func belongsToUser(user database.User, recipe database.Recipe) bool {
+	return user.ID == recipe.UserID
+}
