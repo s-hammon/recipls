@@ -26,8 +26,9 @@ const xmlDomain = "http://localhost" + port
 const xmlDescription = "A recipe feed"
 
 type apiConfig struct {
-	DB  *database.Queries
-	App *app.App
+	DB        *database.Queries
+	App       *app.App
+	jwtSecret string
 }
 
 //go:embed static/*
@@ -63,7 +64,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg := apiConfig{DB: dbQueries, App: app}
+	cfg := apiConfig{
+		DB:        dbQueries,
+		App:       app,
+		jwtSecret: os.Getenv("JWT_SECRET"),
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.FileServer(http.FS(staticFiles)))

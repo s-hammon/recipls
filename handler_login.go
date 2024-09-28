@@ -7,8 +7,6 @@ import (
 	"github.com/s-hammon/recipls/internal/auth"
 )
 
-// const maxExpire = time.Second * 60 * 60 * 24
-
 func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Password string `json:"password"`
