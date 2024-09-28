@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,6 +36,16 @@ func dbToRecipe(recipe database.Recipe) Recipe {
 		Instructions: recipe.Instructions,
 		CategoryID:   recipe.CategoryID.Bytes,
 		UserID:       recipe.UserID.Bytes,
+	}
+}
+
+func (r Recipe) toMetrics(category string) RecipeForMetrics {
+	return RecipeForMetrics{
+		CreatedAt:  r.CreatedAt,
+		Title:      r.Title,
+		Difficulty: difficultyStringToInt(r.Difficulty),
+		Steps:      len(strings.Split(r.Instructions, "\n")),
+		Category:   category,
 	}
 }
 

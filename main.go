@@ -91,12 +91,14 @@ func main() {
 	mux.HandleFunc("POST /v1/revoke", cfg.handlerRevoke)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
-	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
+	mux.HandleFunc("GET /v1/users", cfg.middlewareJWT(cfg.handleGetUserByAPIKey))
 
 	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
-	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareAuth(cfg.handlerUpdateRecipe))
-	mux.HandleFunc("DELETE /v1/recipes/{id}", cfg.middlewareAuth(cfg.handlerDeleteRecipe))
-	mux.HandleFunc("POST /v1/recipes", cfg.middlewareAuth(cfg.handlerCreateRecipe))
+	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerUpdateRecipe))
+	mux.HandleFunc("DELETE /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerDeleteRecipe))
+	mux.HandleFunc("POST /v1/recipes", cfg.middlewareJWT(cfg.handlerCreateRecipe))
+
+	mux.HandleFunc("GET /v1/metrics", cfg.middlewareAuth(cfg.handlerGetMetrics))
 
 	loggedMux := cfg.middlewareLogger(mux)
 

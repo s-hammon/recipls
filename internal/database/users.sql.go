@@ -108,6 +108,40 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	return i, err
 }
 
+const getUsersWithLimit = `-- name: GetUsersWithLimit :many
+SELECT id, created_at, updated_at, name, api_key, email, password FROM users
+ORDER BY updated_at DESC
+LIMIT $1
+`
+
+func (q *Queries) GetUsersWithLimit(ctx context.Context, limit int32) ([]User, error) {
+	rows, err := q.db.Query(ctx, getUsersWithLimit, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.ApiKey,
+			&i.Email,
+			&i.Password,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
 SET updated_at = $2, name = $3, email = $4, password = $5

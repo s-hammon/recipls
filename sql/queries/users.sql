@@ -15,6 +15,11 @@ WHERE api_key = $1 LIMIT 1;
 SELECT * FROM users
 WHERE email = $1 LIMIT 1;
 
+-- name: GetUsersWithLimit :many
+SELECT * FROM users
+ORDER BY updated_at DESC
+LIMIT $1;
+
 -- name: UpdateUser :one
 UPDATE users
 SET updated_at = $2, name = $3, email = $4, password = $5

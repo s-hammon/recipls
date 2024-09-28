@@ -28,3 +28,11 @@ func dbToUser(user database.User) User {
 		ApiKey:    user.ApiKey,
 	}
 }
+
+func (u *User) toMetrics(recipesPublished int) UserForMetrics {
+	return UserForMetrics{
+		CreatedAt:        u.CreatedAt,
+		Name:             u.Name,
+		RecipesPublished: recipesPublished,
+	}
+}

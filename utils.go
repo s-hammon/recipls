@@ -14,6 +14,8 @@ import (
 
 const templatePath = "templates"
 
+var star = []byte("\u2b50")
+
 func getTemplate(fname string, funcs template.FuncMap) *template.Template {
 	fp := filepath.Join(templatePath, fname)
 	return template.Must(
@@ -43,7 +45,10 @@ func intToPgType(i int) pgtype.Int4 {
 }
 
 func getDifficultyString(difficulty int) string {
-	star := []byte("\u2b50")
 	r, _ := utf8.DecodeRune(star)
 	return strings.Repeat(string(r), difficulty)
+}
+
+func difficultyStringToInt(s string) int {
+	return strings.Count(s, string(star))
 }
