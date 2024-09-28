@@ -68,12 +68,16 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("GET /static/", http.FileServer(http.FS(staticFiles)))
 
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "index.html")
 	})
 
 	mux.HandleFunc("GET /index.xml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, app.RSSPath)
+	})
+	mux.HandleFunc("/login", cfg.renderLoginTemplate)
+	mux.HandleFunc("/home", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "This is the home page--you have successfully logged in")
 	})
 
 	mux.HandleFunc("GET /recipes/{id}", cfg.renderRecipeTemplate)

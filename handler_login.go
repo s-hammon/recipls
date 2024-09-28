@@ -32,4 +32,6 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusUnauthorized, "invalid password")
 		return
 	}
+
+	respondJSON(w, http.StatusAccepted, "login successful")
 }
