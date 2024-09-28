@@ -4,29 +4,36 @@ document.getElementById("loginForm").addEventListener('submit', function(event) 
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const data = {
-        email: email,
-        password: password
-    };
+    loginUser(email, password);
+});
 
-    fetch('/v1/login', {
+async function loginUser(email, password) {
+    const data = { email, password };
+
+    const response = await fetch('/v1/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
     })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw new Error('login failed');
-    })
-    .then(data => {
-        console.log('Success:', data);
+
+    if (response.ok) {
+        const { id, status, access_token, refresh_token } = await response.json();
+
+        setAccessToken(access_token);
+        localStorage.setItem('refreshToken', refresh_token);
+
+        console.log(`ID: ${id}, Status: ${status}`)
         window.location.href = '/home';
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    })
-});
+    } else {
+        const errorData = await response.json();
+        console.error('Login failed:', errorData);
+    }
+}
+
+let currentAccessToken = '';
+
+function setAccessToken(token) {
+    currentAccessToken = token;
+}

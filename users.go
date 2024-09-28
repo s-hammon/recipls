@@ -24,6 +24,7 @@ func dbToUser(user database.User) User {
 		UpdatedAt: user.UpdatedAt.Time,
 		Name:      user.Name,
 		Email:     user.Email,
+		Password:  user.Password,
 		ApiKey:    user.ApiKey,
 	}
 }
