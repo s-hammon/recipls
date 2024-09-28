@@ -21,19 +21,44 @@ async function loginUser(email, password) {
     if (response.ok) {
         const { id, status, access_token, refresh_token } = await response.json();
 
-        setAccessToken(access_token);
-        localStorage.setItem('refreshToken', refresh_token);
+        localStorage.setItem('access_token', access_token);
+        document.cookie = `refresh_token=${refresh_token}; path=/; SameSite=Strict`;
 
-        console.log(`ID: ${id}, Status: ${status}`)
-        window.location.href = '/home';
+        fetchHomePage();
     } else {
         const errorData = await response.json();
         console.error('Login failed:', errorData);
     }
 }
 
-let currentAccessToken = '';
+async function fetchHomePage() {
+    const access_token = localStorage.getItem('access_token');
 
-function setAccessToken(token) {
-    currentAccessToken = token;
+    try {
+        const response = await fetch("/home", {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const html = await response.text();
+            document.open();
+            document.write(html);
+            document.close();
+        } else {
+            console.error('Failed to fetch home page:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error fetching home page:', error);
+    }
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
 }

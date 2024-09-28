@@ -6,6 +6,10 @@ RETURNING id, created_at, title;
 -- name: GetRecipes :many
 SELECT * FROM recipes;
 
+-- name: GetRecipesByUser :many
+SELECT * FROM recipes
+WHERE user_id = $1;
+
 -- name: GetRecipesWithLimit :many
 SELECT * FROM recipes
 ORDER BY created_at DESC

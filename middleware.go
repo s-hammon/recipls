@@ -7,17 +7,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/s-hammon/recipls/internal/auth"
 	"github.com/s-hammon/recipls/internal/database"
 )
-
-const ApiAuthKey = "ApiKey"
 
 type authHandler func(http.ResponseWriter, *http.Request, database.User)
 
 func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := auth.GetToken(ApiAuthKey, r.Header)
+		token, err := auth.GetToken(auth.APIKeyTokenType, r.Header)
 		if err != nil {
 			respondError(w, http.StatusUnauthorized, err.Error())
 			return
@@ -26,6 +25,35 @@ func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
 		user, err := a.DB.GetUserByAPIKey(r.Context(), token)
 		if err != nil {
 			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		handler(w, r, user)
+	}
+}
+
+func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token, err := auth.GetToken(auth.AccessTokenType, r.Header)
+		if err != nil {
+			respondError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		userID, err := auth.ValidateJWT(token, a.jwtSecret)
+		if err != nil {
+			respondError(w, http.StatusUnauthorized, "couldn't validate JWT")
+			return
+		}
+		id, err := uuid.Parse(userID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "error parsing UUID stirng")
+			return
+		}
+
+		user, err := a.DB.GetUserByID(r.Context(), uuidToPgType(id))
+		if err != nil {
+			respondError(w, http.StatusNotFound, "user not found")
 			return
 		}
 

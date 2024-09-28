@@ -122,6 +122,42 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 	return items, nil
 }
 
+const getRecipesByUser = `-- name: GetRecipesByUser :many
+SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
+WHERE user_id = $1
+`
+
+func (q *Queries) GetRecipesByUser(ctx context.Context, userID pgtype.UUID) ([]Recipe, error) {
+	rows, err := q.db.Query(ctx, getRecipesByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Recipe
+	for rows.Next() {
+		var i Recipe
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Title,
+			&i.Description,
+			&i.Ingredients,
+			&i.Instructions,
+			&i.CategoryID,
+			&i.UserID,
+			&i.Difficulty,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRecipesWithLimit = `-- name: GetRecipesWithLimit :many
 SELECT id, created_at, updated_at, title, description, ingredients, instructions, category_id, user_id, difficulty FROM recipes
 ORDER BY created_at DESC
