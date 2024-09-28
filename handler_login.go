@@ -48,7 +48,7 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAt := time.Now().UTC().Add(time.Hour * 24 * 60)
+	expiresAt := time.Now().UTC().Add(time.Hour * 24 * 14)
 	if err = a.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		UserID:    uuidToPgType(user.ID),
 		Value:     refreshToken,

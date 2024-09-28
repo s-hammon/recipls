@@ -26,3 +26,25 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	_, err := q.db.Exec(ctx, createRefreshToken, arg.UserID, arg.Value, arg.ExpiresAt)
 	return err
 }
+
+const deleteRefreshTokenByValue = `-- name: DeleteRefreshTokenByValue :exec
+DELETE FROM tokens
+WHERE value = $1
+`
+
+func (q *Queries) DeleteRefreshTokenByValue(ctx context.Context, value string) error {
+	_, err := q.db.Exec(ctx, deleteRefreshTokenByValue, value)
+	return err
+}
+
+const getRefreshTokenByValue = `-- name: GetRefreshTokenByValue :one
+SELECT user_id, value, expires_at FROM tokens
+WHERE value = $1
+`
+
+func (q *Queries) GetRefreshTokenByValue(ctx context.Context, value string) (Token, error) {
+	row := q.db.QueryRow(ctx, getRefreshTokenByValue, value)
+	var i Token
+	err := row.Scan(&i.UserID, &i.Value, &i.ExpiresAt)
+	return i, err
+}

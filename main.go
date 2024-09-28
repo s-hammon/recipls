@@ -89,6 +89,8 @@ func main() {
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 	mux.HandleFunc("POST /v1/login", cfg.handlerLogin)
+	mux.HandleFunc("POST /v1/refresh", cfg.handlerRefresh)
+	mux.HandleFunc("POST /v1/revoke", cfg.handlerRevoke)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
 	mux.HandleFunc("GET /v1/users", cfg.middlewareAuth(cfg.handleGetUserByAPIKey))
