@@ -1,8 +1,13 @@
 package web
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -49,4 +54,52 @@ func getDifficultyString(difficulty int) string {
 
 func difficultyStringToInt(s string) int {
 	return strings.Count(s, string(star))
+}
+
+func fetchRecord[T any](client *http.Client, endpoint string, queryParams queryParams) (T, error) {
+	var record T
+
+	url := baseURL + endpoint
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return record, err
+	}
+
+	if queryParams != nil {
+		req.URL.RawQuery = buildQuery(queryParams)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return record, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode > 299 {
+		msg := fmt.Sprintf("%d %s %s", resp.StatusCode, resp.Request.Method, endpoint)
+		return record, errors.New(msg)
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return record, err
+	}
+
+	if err := json.Unmarshal(b, &record); err != nil {
+		return record, err
+	}
+
+	return record, nil
+}
+
+type queryParams map[string]string
+
+func buildQuery(params queryParams) string {
+	q := url.Values{}
+
+	for k, v := range params {
+		q.Add(k, v)
+	}
+
+	return q.Encode()
 }

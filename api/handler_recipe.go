@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -74,6 +75,52 @@ func (c *config) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, use
 	}
 
 	respondJSON(w, http.StatusCreated, resp)
+}
+
+func (c *config) handlerGetRecipes(w http.ResponseWriter, r *http.Request) {
+	userID := ""
+	reqUserId := r.URL.Query().Get("user_id")
+	if reqUserId != "" {
+		slog.Info("got user_id in request", "user_id", reqUserId)
+		userID = reqUserId
+	}
+
+	var dbRecipe []database.Recipe
+	var err error
+	switch userID {
+	case "":
+		dbRecipe, err = c.DB.GetRecipesWithLimit(r.Context(), 100)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				respondError(w, http.StatusNotFound, "no recipes found")
+				return
+			}
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	default:
+		id, err := uuid.Parse(userID)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "couldn't parse user UUID")
+			return
+		}
+		dbRecipe, err = c.DB.GetRecipesByUser(r.Context(), uuidToPgType(id))
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				respondError(w, http.StatusNotFound, "no recipes found")
+				return
+			}
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	var recipes []Recipe
+	for _, r := range dbRecipe {
+		recipes = append(recipes, DBToRecipe(r))
+	}
+
+	respondJSON(w, http.StatusOK, recipes)
 }
 
 func (c *config) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {

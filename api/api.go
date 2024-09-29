@@ -21,7 +21,11 @@ func NewService(db *database.Queries, jwtSecret string) *http.HandlerFunc {
 	mux.HandleFunc("POST /v1/revoke", cfg.handlerRevoke)
 
 	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
-	mux.HandleFunc("GET /v1/users", cfg.middlewareJWT(cfg.handleGetUserByAPIKey))
+	mux.HandleFunc("GET /v1/users", cfg.middlewareJWT(cfg.handlerGetUserByAPIKey))
+	mux.HandleFunc("GET /v1/users/{id}", cfg.handleGetUserByID)
+
+	mux.HandleFunc("GET /v1/recipes", cfg.handlerGetRecipes)
+	mux.HandleFunc(("GET /v1/categories"), cfg.handlerGetCategories)
 
 	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
 	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerUpdateRecipe))

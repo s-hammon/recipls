@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/s-hammon/recipls/internal/auth"
 	"github.com/s-hammon/recipls/internal/database"
 )
@@ -56,6 +57,25 @@ func (c *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (c *config) handleGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
+	id, err := getRequestID(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		return
+	}
+
+	userDB, err := c.DB.GetUserByID(r.Context(), uuidToPgType(id))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			respondError(w, http.StatusNotFound, "user not found")
+			return
+		}
+	}
+
+	user := DBToUser(userDB)
+	respondJSON(w, http.StatusOK, user)
+}
+
+func (c *config) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
 	respondJSON(w, http.StatusOK, DBToUser(user))
 }

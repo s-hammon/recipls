@@ -30,7 +30,7 @@ async function fetchWithAuth(url, options= {}) {
 
 async function logout() {
     localStorage.removeItem('access_token');
-    const refresh_token = getCookie('refresh_token');
+    const refresh_token = getCookie('recipls_token');
 
     const response = await fetch('/v1/revoke', {
         method: 'POST',

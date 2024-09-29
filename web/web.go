@@ -3,12 +3,16 @@ package web
 import (
 	"embed"
 	"net/http"
+	"time"
 
 	"github.com/s-hammon/recipls/api"
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-const templatePath = "web/templates"
+const (
+	baseURL      = "http://localhost:8080/v1"
+	templatePath = "web/templates"
+)
 
 //go:embed static/*
 var staticFiles embed.FS
@@ -16,6 +20,7 @@ var staticFiles embed.FS
 func NewService(db *database.Queries, jwtSecret string) *http.HandlerFunc {
 	cfg := config{
 		DB:        db,
+		client:    &http.Client{Timeout: time.Second * 5},
 		jwtSecret: jwtSecret,
 	}
 
@@ -40,5 +45,6 @@ func NewService(db *database.Queries, jwtSecret string) *http.HandlerFunc {
 
 type config struct {
 	DB        *database.Queries
+	client    *http.Client
 	jwtSecret string
 }

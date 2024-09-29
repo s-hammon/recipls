@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/s-hammon/recipls/api"
 	"github.com/s-hammon/recipls/internal/database"
 )
@@ -16,18 +17,12 @@ func (c *config) renderHomeTemplate(w http.ResponseWriter, r *http.Request, user
 		return
 	}
 
-	var recipes []api.Recipe
-	recipesDB, err := c.DB.GetRecipesByUser(r.Context(), user.ID)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "error fetching recipes")
-		return
-	}
-	if len(recipesDB) == 0 {
-		slog.Warn("WARN: no recipes found", "user_id", user.ID)
-	}
+	userID := uuid.UUID(user.ID.Bytes)
+	queryParams := queryParams{"user_id": userID.String()}
 
-	for _, r := range recipesDB {
-		recipes = append(recipes, api.DBToRecipe(r))
+	recipes, err := fetchRecord[[]api.Recipe](c.client, "/recipes", queryParams)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
 	}
 
 	tmpl := getTemplate(tmplHome, nil)
@@ -40,6 +35,7 @@ func (c *config) renderHomeTemplate(w http.ResponseWriter, r *http.Request, user
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {
+		slog.Error("couldn't serve template", "tempalte", tmplHome, "error", err)
 		respondError(w, http.StatusInternalServerError, nil)
 	}
 }
