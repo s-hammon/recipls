@@ -6,7 +6,7 @@ import (
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-func NewService(db *database.Queries, jwtSecret string) *http.HandlerFunc {
+func NewService(db *database.Queries, jwtSecret string) *http.ServeMux {
 	cfg := config{
 		DB:        db,
 		jwtSecret: jwtSecret,
@@ -32,9 +32,7 @@ func NewService(db *database.Queries, jwtSecret string) *http.HandlerFunc {
 	mux.HandleFunc("DELETE /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerDeleteRecipe))
 	mux.HandleFunc("POST /v1/recipes", cfg.middlewareJWT(cfg.handlerCreateRecipe))
 
-	loggedMux := MiddlewareLogger(mux)
-
-	return &loggedMux
+	return mux
 }
 
 type config struct {

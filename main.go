@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,11 +21,14 @@ import (
 	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
 )
 
-const port = ":8080"
-
-const xmlDomain = "http://localhost" + port
+var (
+	host               = flag.String("host", "0.0.0.0", "server host")
+	port               = flag.Int("port", 8080, "listening port for server")
+	rssRefreshInterval = flag.Int("rss-interval", 10, "interval (in minutes) by which the RSS feed updates")
+)
 
 func main() {
+	flag.Parse()
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -31,6 +37,7 @@ func main() {
 	if dbURL == "" {
 		log.Fatal("CONN_STRING must be set")
 	}
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET must be set (make it good!)")
@@ -58,7 +65,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", apiSvc)
 
-	app, err := app.New(dbQueries, xmlDomain)
+	domain := net.JoinHostPort(*host, strconv.Itoa(*port))
+	app, err := app.New(dbQueries, domain)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,13 +78,13 @@ func main() {
 	loggedMux := api.MiddlewareLogger(mux)
 
 	srv := &http.Server{
-		Addr:    port,
+		Addr:    domain,
 		Handler: loggedMux,
 	}
 
-	const requestInterval = time.Minute * 10
+	requestInterval := time.Minute * time.Duration(*rssRefreshInterval)
 	go app.RSSUpdateWorker(requestInterval)
 
-	fmt.Printf("Listening on port %s...\n", port)
+	fmt.Printf("Listening on port %d...\n", *port)
 	log.Fatal(srv.ListenAndServe())
 }
