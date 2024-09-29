@@ -9,7 +9,7 @@ import (
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-const maxExpire = time.Second * 60 * 60 * 24
+const maxExpire = time.Second * 60 * 5
 
 func (c *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {

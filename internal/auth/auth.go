@@ -20,6 +20,7 @@ const (
 var (
 	ErrMissingAuthHeader = errors.New("no auth header in request")
 	ErrInvalidAuthHeader = errors.New("invalid auth header format")
+	ErrExpiredJWT        = errors.New("JWT has expired")
 )
 
 func HashPassword(password string) (string, error) {
@@ -79,6 +80,14 @@ func ValidateJWT(tokenString, tokenSecret string) (string, error) {
 	}
 	if issuer != string("recipls") {
 		return "", errors.New("invalid issuer")
+	}
+
+	expiry, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return "", err
+	}
+	if expiry.Time.Before(time.Now().UTC()) {
+		return "", ErrExpiredJWT
 	}
 
 	return userID, nil

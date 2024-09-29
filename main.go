@@ -14,7 +14,6 @@ import (
 	"github.com/s-hammon/recipls/api"
 	"github.com/s-hammon/recipls/app"
 	"github.com/s-hammon/recipls/internal/database"
-	"github.com/s-hammon/recipls/web"
 
 	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
 )
@@ -55,11 +54,9 @@ func main() {
 	dbQueries := database.New(db)
 
 	apiSvc := api.NewService(dbQueries, jwtSecret)
-	webSvc := web.NewService(dbQueries, jwtSecret)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", apiSvc)
-	mux.Handle("/web/", http.StripPrefix("/web", webSvc))
 
 	app, err := app.New(dbQueries, xmlDomain)
 	if err != nil {
