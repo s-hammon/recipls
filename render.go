@@ -77,13 +77,47 @@ func (a *apiConfig) renderRecipeTemplate(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+func (a *apiConfig) renderNewRecipeTemplate(w http.ResponseWriter, r *http.Request, user database.User) {
+	if r.Method != http.MethodGet {
+		respondError(w, http.StatusMethodNotAllowed, nil)
+		return
+	}
+
+	categories, err := a.DB.GetCategories(r.Context())
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "couldn't fetch categories")
+		return
+	}
+
+	tmpl := getTemplate("new_recipe.html", template.FuncMap{
+		"seq": seq,
+	})
+	data := struct {
+		Categories []database.Category
+	}{categories}
+
+	if err := tmpl.Execute(w, data); err != nil {
+		respondError(w, http.StatusInternalServerError, "couldn't render template")
+	}
+}
+
 func (a *apiConfig) renderLoginTemplate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		respondError(w, http.StatusMethodNotAllowed, nil)
+		return
 	}
 
 	tmpl := getTemplate("login.html", nil)
 	if err := tmpl.Execute(w, nil); err != nil {
 		respondError(w, http.StatusNotFound, "couldn't find login page")
 	}
+}
+
+func seq(start, end int) []int {
+	s := make([]int, end-start+1)
+	for i := start; i <= end; i++ {
+		s[i-start] = i
+	}
+
+	return s
 }

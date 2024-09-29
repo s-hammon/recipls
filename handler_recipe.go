@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,12 +14,12 @@ import (
 
 func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	type parameters struct {
-		Title        string    `json:"title"`
-		Description  string    `json:"description"`
-		Difficulty   int       `json:"difficulty"`
-		Ingredients  string    `json:"ingredients"`
-		Instructions string    `json:"instructions"`
-		CategoryID   uuid.UUID `json:"category_id"`
+		Title        string `json:"title"`
+		Description  string `json:"description"`
+		Difficulty   string `json:"difficulty"`
+		Ingredients  string `json:"ingredients"`
+		Instructions string `json:"instructions"`
+		Category     string `json:"category"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -28,13 +29,19 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	category, err := a.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
+	category, err := a.DB.GetCategoryByName(r.Context(), params.Category)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "invalid category_id")
+			respondError(w, http.StatusNotFound, "invalid category")
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	difficulty, err := strconv.Atoi(params.Difficulty)
+	if err != nil || (difficulty < 0 || difficulty > 5) {
+		respondError(w, http.StatusBadRequest, "difficulty must be a string integer between 1 and 5")
 		return
 	}
 
@@ -44,6 +51,7 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		UpdatedAt:    timeToPgType(time.Now().UTC()),
 		Title:        params.Title,
 		Description:  params.Description,
+		Difficulty:   intToPgType(difficulty),
 		Ingredients:  params.Ingredients,
 		Instructions: params.Instructions,
 		CategoryID:   category.ID,

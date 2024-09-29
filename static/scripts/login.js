@@ -22,8 +22,9 @@ async function loginUser(email, password) {
         const { id, status, access_token, refresh_token } = await response.json();
 
         localStorage.setItem('access_token', access_token);
-        document.cookie = `refresh_token=${refresh_token}; path=/; SameSite=Strict`;
+        setCookie('recipls_token', refresh_token);
 
+        console.log(status);
         fetchHomePage();
     } else {
         const errorData = await response.json();
@@ -32,33 +33,20 @@ async function loginUser(email, password) {
 }
 
 async function fetchHomePage() {
-    const access_token = localStorage.getItem('access_token');
-
     try {
-        const response = await fetch("/home", {
-            method: "GET",
-            headers: {
-                'Authorization': `Bearer ${access_token}`,
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-        });
+        const response = await fetchWithAuth("/home", { method: 'GET' });
 
         if (response.ok) {
             const html = await response.text();
             document.open();
             document.write(html);
             document.close();
+
+            window.history.pushState({}, '', '/home');
         } else {
             console.error('Failed to fetch home page:', await response.text());
         }
     } catch (error) {
         console.error('Error fetching home page:', error);
     }
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
 }

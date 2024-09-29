@@ -10,10 +10,11 @@
 <body>
     <header class="art-deco-border">
         <h1>Welcome, {{ .User.Name }}</h1>
+        <button id="logoutButton">Logout</button>
     </header>
 
     <div class="decorative-box">
-        <h2>You'll find hardly more than just the recipes here.</h2>
+        <p>You'll find hardly more than just the recipes here.</p>
     </div>
 
     <div class="container">
@@ -22,7 +23,7 @@
             <ul id="recipeList">
                 {{ range .Recipes }}
                 <li>
-                    <strong>{{ .Title }}</strong><br>
+                    <strong><a href="/recipes/{{ .ID }}">{{ .Title }}</a></strong><br>
                     <em>{{ .Description }}</em><br>
                     <span>Difficulty: {{ .Difficulty }}</span>
                 </li>
@@ -30,6 +31,7 @@
                 <li>No recipes found.</li>
                 {{ end }}
             </ul>
+            <button id="createRecipeButton">Create Recipe</button>
         </div>
     </div>
 
@@ -38,5 +40,8 @@
         <a href="#">Terms of Service</a>
         <a href="#">Privacy Policy</a>
     </footer>
+
+<script src="/static/scripts/auth.js"></script>
+<script src="/static/scripts/home.js"></script>
 </body>
 </html>

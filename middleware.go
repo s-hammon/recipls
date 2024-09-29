@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -54,6 +56,42 @@ func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
 		user, err := a.DB.GetUserByID(r.Context(), uuidToPgType(id))
 		if err != nil {
 			respondError(w, http.StatusNotFound, "user not found")
+			return
+		}
+
+		handler(w, r, user)
+	}
+}
+
+func (a *apiConfig) middlewareSession(handler authHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("recipls_token")
+		if err != nil {
+			switch {
+			case errors.Is(err, http.ErrNoCookie):
+				http.Redirect(w, r, "/login", http.StatusFound)
+				return
+			default:
+				log.Println(err)
+				respondError(w, http.StatusInternalServerError, err.Error())
+			}
+			return
+		}
+
+		refreshToken, err := a.DB.GetRefreshTokenByValue(r.Context(), cookie.Value)
+		if err != nil {
+			slog.Info("redirecting user to login")
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		if refreshToken.ExpiresAt.Time.Before(time.Now().UTC()) {
+			respondError(w, http.StatusUnauthorized, "cookie expired")
+			return
+		}
+
+		user, err := a.DB.GetUserByID(r.Context(), refreshToken.UserID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "couldn't get user")
 			return
 		}
 

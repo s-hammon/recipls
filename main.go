@@ -81,8 +81,9 @@ func main() {
 		http.ServeFile(w, r, app.RSSPath)
 	})
 	mux.HandleFunc("/login", cfg.renderLoginTemplate)
-	mux.HandleFunc("/home", cfg.middlewareJWT(cfg.renderHomeTemplate))
+	mux.HandleFunc("/home", cfg.middlewareSession(cfg.renderHomeTemplate))
 
+	mux.HandleFunc("GET /recipes/new", cfg.middlewareJWT(cfg.renderNewRecipeTemplate))
 	mux.HandleFunc("GET /recipes/{id}", cfg.renderRecipeTemplate)
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
