@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,27 +11,17 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/s-hammon/recipls/api"
 	"github.com/s-hammon/recipls/app"
 	"github.com/s-hammon/recipls/internal/database"
+	"github.com/s-hammon/recipls/web"
 
 	pgxUUID "github.com/jackc/pgx-gofrs-uuid"
 )
 
 const port = ":8080"
 
-const xmlPath = "content/xml"
-const xmlName = "Recipls"
 const xmlDomain = "http://localhost" + port
-const xmlDescription = "A recipe feed"
-
-type apiConfig struct {
-	DB        *database.Queries
-	App       *app.App
-	jwtSecret string
-}
-
-//go:embed static/*
-var staticFiles embed.FS
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -42,6 +31,10 @@ func main() {
 	dbURL := os.Getenv("CONN_STRING")
 	if dbURL == "" {
 		log.Fatal("CONN_STRING must be set")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET must be set (make it good!)")
 	}
 
 	config, err := pgxpool.ParseConfig(dbURL)
@@ -60,48 +53,24 @@ func main() {
 	defer db.Close()
 
 	dbQueries := database.New(db)
-	app, err := app.New(xmlPath, xmlName, xmlDomain, xmlDescription)
+
+	apiSvc := api.NewService(dbQueries, jwtSecret)
+	webSvc := web.NewService(dbQueries, jwtSecret)
+
+	mux := http.NewServeMux()
+	mux.Handle("/", apiSvc)
+	mux.Handle("/web/", http.StripPrefix("/web", webSvc))
+
+	app, err := app.New(dbQueries, xmlDomain)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg := apiConfig{
-		DB:        dbQueries,
-		App:       app,
-		jwtSecret: os.Getenv("JWT_SECRET"),
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle("GET /static/", http.FileServer(http.FS(staticFiles)))
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
 
 	mux.HandleFunc("GET /index.xml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, app.RSSPath)
 	})
-	mux.HandleFunc("/login", cfg.renderLoginTemplate)
-	mux.HandleFunc("/home", cfg.middlewareSession(cfg.renderHomeTemplate))
 
-	mux.HandleFunc("GET /recipes/new", cfg.middlewareJWT(cfg.renderNewRecipeTemplate))
-	mux.HandleFunc("GET /recipes/{id}", cfg.renderRecipeTemplate)
-
-	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
-	mux.HandleFunc("POST /v1/login", cfg.handlerLogin)
-	mux.HandleFunc("POST /v1/refresh", cfg.handlerRefresh)
-	mux.HandleFunc("POST /v1/revoke", cfg.handlerRevoke)
-
-	mux.HandleFunc("POST /v1/users", cfg.handlerCreateUser)
-	mux.HandleFunc("GET /v1/users", cfg.middlewareJWT(cfg.handleGetUserByAPIKey))
-
-	mux.HandleFunc("GET /v1/recipes/{id}", cfg.handlerGetRecipeByID)
-	mux.HandleFunc("PUT /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerUpdateRecipe))
-	mux.HandleFunc("DELETE /v1/recipes/{id}", cfg.middlewareJWT(cfg.handlerDeleteRecipe))
-	mux.HandleFunc("POST /v1/recipes", cfg.middlewareJWT(cfg.handlerCreateRecipe))
-
-	mux.HandleFunc("GET /v1/metrics", cfg.middlewareAuth(cfg.handlerGetMetrics))
-
-	loggedMux := cfg.middlewareLogger(mux)
+	loggedMux := api.MiddlewareLogger(mux)
 
 	srv := &http.Server{
 		Addr:    port,
@@ -109,7 +78,7 @@ func main() {
 	}
 
 	const requestInterval = time.Minute * 10
-	go cfg.rssUpdateWorker(requestInterval)
+	go app.RSSUpdateWorker(requestInterval)
 
 	fmt.Printf("Listening on port %s...\n", port)
 	log.Fatal(srv.ListenAndServe())

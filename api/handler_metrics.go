@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -26,7 +26,7 @@ type RecipeForMetrics struct {
 	Category   string    `json:"category"`
 }
 
-func (a *apiConfig) handlerGetMetrics(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) handlerGetMetrics(w http.ResponseWriter, r *http.Request, user database.User) {
 	type response struct {
 		Users   []UserForMetrics
 		Recipes []RecipeForMetrics
@@ -37,7 +37,7 @@ func (a *apiConfig) handlerGetMetrics(w http.ResponseWriter, r *http.Request, us
 	if reqLimit != "" {
 		intLimit, err := strconv.Atoi(reqLimit)
 		if err != nil || intLimit < 1 {
-			respondError(w, http.StatusBadRequest, "limit must be a positive, non-zero integer")
+			respondError(w, http.StatusBadRequest, "limit must be c positive, non-zero integer")
 			return
 		}
 		if intLimit > maxLimit {
@@ -56,10 +56,10 @@ func (a *apiConfig) handlerGetMetrics(w http.ResponseWriter, r *http.Request, us
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go a.fetchUsers(r.Context(), limit, &channels, &wg)
+	go c.fetchUsers(r.Context(), limit, &channels, &wg)
 
 	wg.Add(1)
-	go a.fetchRecipes(r.Context(), limit, &channels, &wg)
+	go c.fetchRecipes(r.Context(), limit, &channels, &wg)
 
 	go func() {
 		wg.Wait()
@@ -90,10 +90,10 @@ type metricsChannels struct {
 	errCh     chan error
 }
 
-func (a *apiConfig) fetchUsers(ctx context.Context, limit int, channels *metricsChannels, wg *sync.WaitGroup) {
+func (c *config) fetchUsers(ctx context.Context, limit int, channels *metricsChannels, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	usersDB, err := a.DB.GetUsersWithLimit(ctx, int32(limit))
+	usersDB, err := c.DB.GetUsersWithLimit(ctx, int32(limit))
 	if err != nil {
 		channels.errCh <- err
 		return
@@ -101,21 +101,21 @@ func (a *apiConfig) fetchUsers(ctx context.Context, limit int, channels *metrics
 
 	users := []UserForMetrics{}
 	for _, u := range usersDB {
-		userRecipes, err := a.DB.GetRecipesByUser(ctx, u.ID)
+		userRecipes, err := c.DB.GetRecipesByUser(ctx, u.ID)
 		if err != nil {
 			channels.errCh <- err
 			return
 		}
-		user := dbToUser(u)
+		user := DBToUser(u)
 		users = append(users, user.toMetrics(len(userRecipes)))
 	}
 	channels.usersCh <- users
 }
 
-func (a *apiConfig) fetchRecipes(ctx context.Context, limit int, channels *metricsChannels, wg *sync.WaitGroup) {
+func (c *config) fetchRecipes(ctx context.Context, limit int, channels *metricsChannels, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	recipesDB, err := a.DB.GetRecipesWithLimit(ctx, int32(limit))
+	recipesDB, err := c.DB.GetRecipesWithLimit(ctx, int32(limit))
 	if err != nil {
 		channels.errCh <- err
 		return
@@ -123,12 +123,12 @@ func (a *apiConfig) fetchRecipes(ctx context.Context, limit int, channels *metri
 
 	recipes := []RecipeForMetrics{}
 	for _, p := range recipesDB {
-		category, err := a.DB.GetCategoryByID(ctx, p.CategoryID)
+		category, err := c.DB.GetCategoryByID(ctx, p.CategoryID)
 		if err != nil {
 			channels.errCh <- err
 			return
 		}
-		recipe := dbToRecipe(p)
+		recipe := DBToRecipe(p)
 		recipes = append(recipes, recipe.toMetrics(category.Name))
 	}
 	channels.recipesCh <- recipes

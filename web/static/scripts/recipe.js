@@ -24,7 +24,7 @@ async function uploadRecipe(recipe) {
     });
 
     if (response.ok) {
-        window.location.href = "/home"
+        window.location.href = "/web/home"
     } else {
         const errorData = await response.json();
         console.error('Upload failed:', errorData);
@@ -32,6 +32,6 @@ async function uploadRecipe(recipe) {
 }
 
 function redirectToHomePage() {
-    window.location.href = '/home';
-    window.history.pushState({}, '', '/home');
+    window.location.href = '/web/home';
+    window.history.pushState({}, '', '/web/home');
 }

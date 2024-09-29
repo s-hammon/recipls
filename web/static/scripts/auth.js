@@ -12,7 +12,7 @@ async function fetchWithAuth(url, options= {}) {
 
     if (!access_token) {
         console.error("no access token found. Redirecting to login...");
-        window.location.href = '/login';
+        window.location.href = '/web/login';
         return;
     }
 
@@ -49,7 +49,7 @@ async function logout() {
     }
     
     console.log(`attempting to remove token: ${refresh_token}`);
-    window.location.href = '/login';
+    window.location.href = '/web/login';
 }
 
 function getCookie(name) {

@@ -8,7 +8,7 @@ document.getElementById('createRecipeButton').addEventListener('click', function
 
 async function fetchNewRecipePage() {
     try {
-        const response = await fetchWithAuth('/recipes/new', { method: 'GET' });
+        const response = await fetchWithAuth('/web/recipes/new', { method: 'GET' });
 
         if (response.ok) {
             const html = await response.text();
@@ -16,7 +16,7 @@ async function fetchNewRecipePage() {
             document.write(html);
             document.close();
         
-            window.history.pushState({}, '', '/recipes/new');
+            window.history.pushState({}, '', '/web/recipes/new');
         } else {
             console.error('Failed to fetch home page:', await response.text());
         }

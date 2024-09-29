@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	type parameters struct {
 		Title        string `json:"title"`
 		Description  string `json:"description"`
@@ -29,7 +29,7 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	category, err := a.DB.GetCategoryByName(r.Context(), params.Category)
+	category, err := c.DB.GetCategoryByName(r.Context(), params.Category)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			respondError(w, http.StatusNotFound, "invalid category")
@@ -41,11 +41,11 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 
 	difficulty, err := strconv.Atoi(params.Difficulty)
 	if err != nil || (difficulty < 0 || difficulty > 5) {
-		respondError(w, http.StatusBadRequest, "difficulty must be a string integer between 1 and 5")
+		respondError(w, http.StatusBadRequest, "difficulty must be c string integer between 1 and 5")
 		return
 	}
 
-	recipe, err := a.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
+	recipe, err := c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
 		ID:           uuidToPgType(uuid.New()),
 		CreatedAt:    timeToPgType(time.Now().UTC()),
 		UpdatedAt:    timeToPgType(time.Now().UTC()),
@@ -76,14 +76,14 @@ func (a *apiConfig) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, 
 	respondJSON(w, http.StatusCreated, resp)
 }
 
-func (a *apiConfig) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
+func (c *config) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	id, err := getRequestID(r)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
 
-	dbRecipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	dbRecipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			fmt.Printf("recipe not found: %v\n", id)
@@ -94,17 +94,17 @@ func (a *apiConfig) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	recipe := dbToRecipe(dbRecipe)
+	recipe := DBToRecipe(dbRecipe)
 	respondJSON(w, http.StatusOK, recipe)
 }
 
-func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	id, err := getRequestID(r)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid id parameter")
 	}
 
-	recipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	recipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			respondError(w, http.StatusNotFound, "recipe not found")
@@ -134,7 +134,7 @@ func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	category, err := a.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
+	category, err := c.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			respondError(w, http.StatusNotFound, "invalid category_id")
@@ -144,7 +144,7 @@ func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	if _, err = a.DB.UpdateRecipe(r.Context(), database.UpdateRecipeParams{
+	if _, err = c.DB.UpdateRecipe(r.Context(), database.UpdateRecipeParams{
 		ID:           uuidToPgType(id),
 		UpdatedAt:    timeToPgType(time.Now().UTC()),
 		Title:        params.Title,
@@ -161,14 +161,14 @@ func (a *apiConfig) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, 
 	respondJSON(w, http.StatusNoContent, nil)
 }
 
-func (a *apiConfig) handlerDeleteRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) handlerDeleteRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	id, err := getRequestID(r)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "invalid id parameter")
 		return
 	}
 
-	recipe, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	recipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			respondError(w, http.StatusNotFound, "recipe not found")
@@ -182,7 +182,7 @@ func (a *apiConfig) handlerDeleteRecipe(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	if err := a.DB.DeleteRecipe(r.Context(), uuidToPgType(id)); err != nil {
+	if err := c.DB.DeleteRecipe(r.Context(), uuidToPgType(id)); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

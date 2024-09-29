@@ -1,72 +1,38 @@
-package main
+package web
 
 import (
 	"html/template"
-	"log/slog"
 	"net/http"
 
+	"github.com/s-hammon/recipls/api"
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-func (a *apiConfig) renderHomeTemplate(w http.ResponseWriter, r *http.Request, user database.User) {
-	if r.Method != http.MethodGet {
-		respondError(w, http.StatusMethodNotAllowed, "method not allowed")
-		return
-	}
-
-	var recipes []Recipe
-	recipesDB, err := a.DB.GetRecipesByUser(r.Context(), user.ID)
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "error fetching recipes")
-		return
-	}
-	if len(recipesDB) == 0 {
-		slog.Warn("WARN: no recipes found", "user_id", user.ID)
-	}
-
-	for _, r := range recipesDB {
-		recipes = append(recipes, dbToRecipe(r))
-	}
-
-	tmpl := getTemplate("home.html", nil)
-	data := struct {
-		User    User
-		Recipes []Recipe
-	}{
-		dbToUser(user),
-		recipes,
-	}
-
-	if err := tmpl.Execute(w, data); err != nil {
-		respondError(w, http.StatusInternalServerError, nil)
-	}
-}
-
-func (a *apiConfig) renderRecipeTemplate(w http.ResponseWriter, r *http.Request) {
+func (c *config) renderRecipeTemplate(w http.ResponseWriter, r *http.Request) {
 	id, err := getRequestID(r)
 	if err != nil {
 		respondError(w, http.StatusNotFound, "recipe not found 😔")
 		return
 	}
 
-	recipeDB, err := a.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
+	recipeDB, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "error getting recipe")
 		return
 	}
-	recipe := dbToRecipe(recipeDB)
+	recipe := api.DBToRecipe(recipeDB)
 
-	userDB, err := a.DB.GetUserByID(r.Context(), uuidToPgType(recipe.UserID))
+	userDB, err := c.DB.GetUserByID(r.Context(), uuidToPgType(recipe.UserID))
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "error getting user")
 		return
 	}
-	user := dbToUser(userDB)
+	user := api.DBToUser(userDB)
 
 	tmpl := getTemplate("recipe.html", template.FuncMap{"splitLines": splitLines})
 	data := struct {
-		Recipe Recipe
-		User   User
+		Recipe api.Recipe
+		User   api.User
 	}{
 		Recipe: recipe,
 		User:   user,
@@ -77,13 +43,13 @@ func (a *apiConfig) renderRecipeTemplate(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (a *apiConfig) renderNewRecipeTemplate(w http.ResponseWriter, r *http.Request, user database.User) {
+func (c *config) renderNewRecipeTemplate(w http.ResponseWriter, r *http.Request, user database.User) {
 	if r.Method != http.MethodGet {
 		respondError(w, http.StatusMethodNotAllowed, nil)
 		return
 	}
 
-	categories, err := a.DB.GetCategories(r.Context())
+	categories, err := c.DB.GetCategories(r.Context())
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "couldn't fetch categories")
 		return
@@ -101,7 +67,7 @@ func (a *apiConfig) renderNewRecipeTemplate(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (a *apiConfig) renderLoginTemplate(w http.ResponseWriter, r *http.Request) {
+func (c *config) renderLoginTemplate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		respondError(w, http.StatusMethodNotAllowed, nil)
 		return

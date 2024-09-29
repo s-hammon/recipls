@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"github.com/s-hammon/recipls/internal/database"
 )
 
-func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+func (c *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
@@ -35,7 +35,7 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := a.DB.CreateUser(r.Context(), database.CreateUserParams{
+	user, err := c.DB.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        uuidToPgType(uuid.New()),
 		CreatedAt: timeToPgType(time.Now().UTC()),
 		UpdatedAt: timeToPgType(time.Now().UTC()),
@@ -52,10 +52,10 @@ func (a *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		User
 	}
 	respondJSON(w, http.StatusCreated, response{
-		User: dbToUser(user),
+		User: DBToUser(user),
 	})
 }
 
-func (a *apiConfig) handleGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
-	respondJSON(w, http.StatusOK, dbToUser(user))
+func (c *config) handleGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user database.User) {
+	respondJSON(w, http.StatusOK, DBToUser(user))
 }

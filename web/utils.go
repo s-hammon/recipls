@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"html/template"
@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
-
-const templatePath = "templates"
 
 var star = []byte("\u2b50")
 

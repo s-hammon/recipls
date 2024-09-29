@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ import (
 
 type authHandler func(http.ResponseWriter, *http.Request, database.User)
 
-func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
+func (c *config) middlewareAuth(handler authHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := auth.GetToken(auth.APIKeyTokenType, r.Header)
 		if err != nil {
@@ -24,7 +24,7 @@ func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
 			return
 		}
 
-		user, err := a.DB.GetUserByAPIKey(r.Context(), token)
+		user, err := c.DB.GetUserByAPIKey(r.Context(), token)
 		if err != nil {
 			respondError(w, http.StatusNotFound, err.Error())
 			return
@@ -34,7 +34,7 @@ func (a *apiConfig) middlewareAuth(handler authHandler) http.HandlerFunc {
 	}
 }
 
-func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
+func (c *config) middlewareJWT(handler authHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := auth.GetToken(auth.AccessTokenType, r.Header)
 		if err != nil {
@@ -42,7 +42,7 @@ func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
 			return
 		}
 
-		userID, err := auth.ValidateJWT(token, a.jwtSecret)
+		userID, err := auth.ValidateJWT(token, c.jwtSecret)
 		if err != nil {
 			respondError(w, http.StatusUnauthorized, "couldn't validate JWT")
 			return
@@ -53,7 +53,7 @@ func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
 			return
 		}
 
-		user, err := a.DB.GetUserByID(r.Context(), uuidToPgType(id))
+		user, err := c.DB.GetUserByID(r.Context(), uuidToPgType(id))
 		if err != nil {
 			respondError(w, http.StatusNotFound, "user not found")
 			return
@@ -63,7 +63,7 @@ func (a *apiConfig) middlewareJWT(handler authHandler) http.HandlerFunc {
 	}
 }
 
-func (a *apiConfig) middlewareSession(handler authHandler) http.HandlerFunc {
+func (c *config) middlewareSession(handler authHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("recipls_token")
 		if err != nil {
@@ -78,7 +78,7 @@ func (a *apiConfig) middlewareSession(handler authHandler) http.HandlerFunc {
 			return
 		}
 
-		refreshToken, err := a.DB.GetRefreshTokenByValue(r.Context(), cookie.Value)
+		refreshToken, err := c.DB.GetRefreshTokenByValue(r.Context(), cookie.Value)
 		if err != nil {
 			slog.Info("redirecting user to login")
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -89,7 +89,7 @@ func (a *apiConfig) middlewareSession(handler authHandler) http.HandlerFunc {
 			return
 		}
 
-		user, err := a.DB.GetUserByID(r.Context(), refreshToken.UserID)
+		user, err := c.DB.GetUserByID(r.Context(), refreshToken.UserID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "couldn't get user")
 			return
@@ -99,7 +99,7 @@ func (a *apiConfig) middlewareSession(handler authHandler) http.HandlerFunc {
 	}
 }
 
-func (a *apiConfig) middlewareLogger(handler http.Handler) http.HandlerFunc {
+func (c *config) middlewareLogger(handler http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		mw := &mwResponseWriter{w, http.StatusOK}

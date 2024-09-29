@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
 
-    <link rel="stylesheet" href="/static/css/deco.css">
+    <link rel="stylesheet" href="/web/static/css/deco.css">
 </head>
 <body>
     <header class="art-deco-border">
@@ -23,7 +23,7 @@
             <ul id="recipeList">
                 {{ range .Recipes }}
                 <li>
-                    <strong><a href="/recipes/{{ .ID }}">{{ .Title }}</a></strong><br>
+                    <strong><a href="/web/recipes/{{ .ID }}">{{ .Title }}</a></strong><br>
                     <em>{{ .Description }}</em><br>
                     <span>Difficulty: {{ .Difficulty }}</span>
                 </li>
@@ -41,7 +41,7 @@
         <a href="#">Privacy Policy</a>
     </footer>
 
-<script src="/static/scripts/auth.js"></script>
-<script src="/static/scripts/home.js"></script>
+<script src="/web/static/scripts/auth.js"></script>
+<script src="/web/static/scripts/home.js"></script>
 </body>
 </html>

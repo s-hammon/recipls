@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"time"
@@ -17,7 +17,7 @@ type User struct {
 	ApiKey    string    `json:"api_key"`
 }
 
-func dbToUser(user database.User) User {
+func DBToUser(user database.User) User {
 	return User{
 		ID:        user.ID.Bytes,
 		CreatedAt: user.CreatedAt.Time,

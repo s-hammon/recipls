@@ -34,7 +34,7 @@ async function loginUser(email, password) {
 
 async function fetchHomePage() {
     try {
-        const response = await fetchWithAuth("/home", { method: 'GET' });
+        const response = await fetchWithAuth("/web/home", { method: 'GET' });
 
         if (response.ok) {
             const html = await response.text();
@@ -42,7 +42,7 @@ async function fetchHomePage() {
             document.write(html);
             document.close();
 
-            window.history.pushState({}, '', '/home');
+            window.history.pushState({}, '', '/web/home');
         } else {
             console.error('Failed to fetch home page:', await response.text());
         }

@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 
 const maxExpire = time.Second * 60 * 60 * 24
 
-func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
+func (c *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -24,19 +24,19 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userDB, err := a.DB.GetUserByEmail(r.Context(), params.Email)
+	userDB, err := c.DB.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
 		respondError(w, http.StatusNotFound, "user not found")
 		return
 	}
-	user := dbToUser(userDB)
+	user := DBToUser(userDB)
 
 	if err := auth.CheckHash(user.Password, params.Password); err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid password")
 		return
 	}
 
-	token, err := auth.MakeJWT(user.ID.String(), a.jwtSecret, maxExpire)
+	token, err := auth.MakeJWT(user.ID.String(), c.jwtSecret, maxExpire)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "couldn't create JWT")
 		return
@@ -49,7 +49,7 @@ func (a *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Hour * 24 * 14)
-	if err = a.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+	if err = c.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		UserID:    uuidToPgType(user.ID),
 		Value:     refreshToken,
 		ExpiresAt: timeToPgType(expiresAt),

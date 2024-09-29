@@ -1,13 +1,10 @@
-package main
+package api
 
 import (
-	"context"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/s-hammon/recipls/app"
 	"github.com/s-hammon/recipls/internal/database"
 )
 
@@ -24,7 +21,7 @@ type Recipe struct {
 	UserID       uuid.UUID `json:"user_id"`
 }
 
-func dbToRecipe(recipe database.Recipe) Recipe {
+func DBToRecipe(recipe database.Recipe) Recipe {
 	return Recipe{
 		ID:           recipe.ID.Bytes,
 		CreatedAt:    recipe.CreatedAt.Time,
@@ -46,38 +43,5 @@ func (r Recipe) toMetrics(category string) RecipeForMetrics {
 		Difficulty: difficultyStringToInt(r.Difficulty),
 		Steps:      len(strings.Split(r.Instructions, "\n")),
 		Category:   category,
-	}
-}
-
-func (a *apiConfig) UpdateRSS() error {
-	recipesDB, err := a.DB.GetRecipesWithLimit(context.Background(), 100)
-	if err != nil {
-		return err
-	}
-
-	items := []app.Item{}
-	for _, recipe := range recipesDB {
-		r := dbToRecipe(recipe)
-		items = append(items, app.Item{
-			Title:       r.Title,
-			Link:        xmlDomain + "/recipes/" + r.ID.String(),
-			Description: r.Description,
-			PubDate:     r.CreatedAt,
-		})
-	}
-
-	return a.App.AddItems(items)
-}
-
-func (a *apiConfig) rssUpdateWorker(requestInterval time.Duration) {
-	ticker := time.NewTicker(requestInterval)
-
-	for ; ; <-ticker.C {
-		if err := a.UpdateRSS(); err != nil {
-			log.Println("couldn't update RSS feed: ", err)
-			continue
-		}
-
-		log.Println("RSS feed updated")
 	}
 }
