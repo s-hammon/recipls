@@ -17,7 +17,7 @@ const (
 
 func (c *config) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 	type response struct {
-		Token string `json:"token"`
+		Token string `json:"refresh_token"`
 	}
 
 	authToken, err := auth.GetToken("Bearer", r.Header)

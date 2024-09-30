@@ -1,7 +1,10 @@
 include .env
 
+GOOS := $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
+
 build:
-	@GOOS=linux GOARCH=amd64 go build -o out
+	@GOOS=${GOOS} GOARCH=${GOARCH} go build -o out
 
 run: build
 	@./out
