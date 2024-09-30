@@ -20,3 +20,5 @@ models:
 	sqlc generate
 
 evolve: up models
+
+.PHONY: build run clean up down models evolve
