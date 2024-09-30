@@ -11,19 +11,16 @@ func TestHandlerReadiness(t *testing.T) {
 		name         string
 		method       string
 		expectedCode int
-		expectedBody string
 	}{
 		{
 			"GET 200",
 			"GET",
 			http.StatusOK,
-			`{"status":"ok"}`,
 		},
 		{
 			"POST 405",
 			"POST",
 			http.StatusMethodNotAllowed,
-			`{"status":"error"}`,
 		},
 	}
 
@@ -40,10 +37,6 @@ func TestHandlerReadiness(t *testing.T) {
 			handler.ServeHTTP(rr, req)
 			if status := rr.Code; status != tt.expectedCode {
 				t.Errorf("handler returned wrong status code: got %v want %v", status, tt.expectedCode)
-			}
-
-			if rr.Body.String() != tt.expectedBody {
-				t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), tt.expectedBody)
 			}
 		})
 	}

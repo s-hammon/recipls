@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,6 +10,17 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/s-hammon/recipls/internal/database"
+)
+
+const (
+	ErrInvalidCategory       = "invalid category"
+	ErrInvalidDifficulty     = "difficuly must be a string integer between 1 and 5"
+	ErrFetchRecipe           = "couldn't fine recipe"
+	ErrFetchRecipes          = "no recipes found"
+	ErrParseUserID           = "couldn't parse user ID"
+	ErrRequestID             = "invalid id parameter"
+	ErrForbiddenEditRecipe   = "you do not have permission to edit this recipe"
+	ErrForbiddenDeleteRecipe = "you do not have permission to delete this recipe"
 )
 
 func (c *config) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
@@ -33,7 +43,7 @@ func (c *config) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, use
 	category, err := c.DB.GetCategoryByName(r.Context(), params.Category)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "invalid category")
+			respondError(w, http.StatusNotFound, ErrInvalidCategory)
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
@@ -42,7 +52,7 @@ func (c *config) handlerCreateRecipe(w http.ResponseWriter, r *http.Request, use
 
 	difficulty, err := strconv.Atoi(params.Difficulty)
 	if err != nil || (difficulty < 0 || difficulty > 5) {
-		respondError(w, http.StatusBadRequest, "difficulty must be c string integer between 1 and 5")
+		respondError(w, http.StatusBadRequest, ErrInvalidDifficulty)
 		return
 	}
 
@@ -81,7 +91,6 @@ func (c *config) handlerGetRecipes(w http.ResponseWriter, r *http.Request) {
 	userID := ""
 	reqUserId := r.URL.Query().Get("user_id")
 	if reqUserId != "" {
-		slog.Info("got user_id in request", "user_id", reqUserId)
 		userID = reqUserId
 	}
 
@@ -92,7 +101,7 @@ func (c *config) handlerGetRecipes(w http.ResponseWriter, r *http.Request) {
 		dbRecipe, err = c.DB.GetRecipesWithLimit(r.Context(), 100)
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				respondError(w, http.StatusNotFound, "no recipes found")
+				respondError(w, http.StatusNotFound, ErrFetchRecipes)
 				return
 			}
 			respondError(w, http.StatusInternalServerError, err.Error())
@@ -101,13 +110,13 @@ func (c *config) handlerGetRecipes(w http.ResponseWriter, r *http.Request) {
 	default:
 		id, err := uuid.Parse(userID)
 		if err != nil {
-			respondError(w, http.StatusBadRequest, "couldn't parse user UUID")
+			respondError(w, http.StatusBadRequest, ErrParseUserID)
 			return
 		}
 		dbRecipe, err = c.DB.GetRecipesByUser(r.Context(), uuidToPgType(id))
 		if err != nil {
 			if err == pgx.ErrNoRows {
-				respondError(w, http.StatusNotFound, "no recipes found")
+				respondError(w, http.StatusNotFound, ErrFetchRecipes)
 				return
 			}
 			respondError(w, http.StatusInternalServerError, err.Error())
@@ -126,15 +135,14 @@ func (c *config) handlerGetRecipes(w http.ResponseWriter, r *http.Request) {
 func (c *config) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
 	id, err := getRequestID(r)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		respondError(w, http.StatusBadRequest, ErrRequestID)
 		return
 	}
 
 	dbRecipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			fmt.Printf("recipe not found: %v\n", id)
-			respondError(w, http.StatusNotFound, "recipe not found")
+			respondError(w, http.StatusNotFound, ErrFetchRecipe)
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
@@ -148,20 +156,20 @@ func (c *config) handlerGetRecipeByID(w http.ResponseWriter, r *http.Request) {
 func (c *config) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	id, err := getRequestID(r)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		respondError(w, http.StatusBadRequest, ErrRequestID)
 	}
 
 	recipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "recipe not found")
+			respondError(w, http.StatusNotFound, ErrFetchRecipe)
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if !belongsToUser(user, recipe) {
-		respondError(w, http.StatusForbidden, "you do not have permission to update this recipe")
+		respondError(w, http.StatusForbidden, ErrForbiddenEditRecipe)
 		return
 	}
 
@@ -184,7 +192,7 @@ func (c *config) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, use
 	category, err := c.DB.GetCategoryByID(r.Context(), uuidToPgType(params.CategoryID))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "invalid category_id")
+			respondError(w, http.StatusNotFound, ErrInvalidCategory)
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
@@ -211,21 +219,21 @@ func (c *config) handlerUpdateRecipe(w http.ResponseWriter, r *http.Request, use
 func (c *config) handlerDeleteRecipe(w http.ResponseWriter, r *http.Request, user database.User) {
 	id, err := getRequestID(r)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		respondError(w, http.StatusBadRequest, ErrRequestID)
 		return
 	}
 
 	recipe, err := c.DB.GetRecipeByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "recipe not found")
+			respondError(w, http.StatusNotFound, ErrFetchRecipe)
 			return
 		}
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if !belongsToUser(user, recipe) {
-		respondError(w, http.StatusForbidden, "you do not have permission to delete this recipe")
+		respondError(w, http.StatusForbidden, ErrForbiddenDeleteRecipe)
 		return
 	}
 

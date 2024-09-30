@@ -1,9 +1,7 @@
 package api
 
 import (
-	"html/template"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -12,26 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const templatePath = "templates"
-
 var star = []byte("\u2b50")
-
-func getTemplate(fname string, funcs template.FuncMap) *template.Template {
-	fp := filepath.Join(templatePath, fname)
-	return template.Must(
-		template.New(fname).Funcs(funcs).ParseFiles(fp),
-	)
-}
 
 func getRequestID(r *http.Request) (uuid.UUID, error) {
 	id := r.PathValue("id")
 	return uuid.Parse(id)
 }
-
-func splitLines(s string) []string {
-	return strings.Split(s, "\n")
-}
-
 func uuidToPgType(id uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: id, Valid: true}
 }

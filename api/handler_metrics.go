@@ -12,6 +12,11 @@ import (
 
 const maxLimit = 1000
 
+const (
+	ErrQueryLimitVal   = "limit must be a positive, non-zero integer"
+	ErrQueryLimitThres = "limit must be less than or equal to 1000"
+)
+
 type UserForMetrics struct {
 	CreatedAt        time.Time `json:"created_at"`
 	Name             string    `json:"name"`
@@ -37,11 +42,11 @@ func (c *config) handlerGetMetrics(w http.ResponseWriter, r *http.Request, user 
 	if reqLimit != "" {
 		intLimit, err := strconv.Atoi(reqLimit)
 		if err != nil || intLimit < 1 {
-			respondError(w, http.StatusBadRequest, "limit must be c positive, non-zero integer")
+			respondError(w, http.StatusBadRequest, ErrQueryLimitVal)
 			return
 		}
 		if intLimit > maxLimit {
-			respondError(w, http.StatusBadRequest, "limit must be no greater than 1000")
+			respondError(w, http.StatusBadRequest, ErrQueryLimitThres)
 			return
 		}
 		limit = intLimit

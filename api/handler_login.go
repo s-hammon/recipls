@@ -11,6 +11,14 @@ import (
 
 const maxExpire = time.Second * 60 * 5
 
+const (
+	ErrLoginBody          = "body must contain values for 'email' and 'password'"
+	ErrFetchUser          = "user not found"
+	ErrInvalidPassword    = "invalid password for email"
+	ErrCreateRefreshToken = "couldn't create refresh token"
+	ErrWriteRefreshToken  = "could't write refresh token"
+)
+
 func (c *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
@@ -20,31 +28,31 @@ func (c *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	if err := decoder.Decode(&params); err != nil {
-		respondError(w, http.StatusBadRequest, "invalid request")
+		respondError(w, http.StatusBadRequest, ErrLoginBody)
 		return
 	}
 
 	userDB, err := c.DB.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		respondError(w, http.StatusNotFound, "user not found")
+		respondError(w, http.StatusUnauthorized, ErrFetchUser)
 		return
 	}
 	user := DBToUser(userDB)
 
 	if err := auth.CheckHash(user.Password, params.Password); err != nil {
-		respondError(w, http.StatusUnauthorized, "invalid password")
+		respondError(w, http.StatusUnauthorized, ErrInvalidPassword)
 		return
 	}
 
 	token, err := auth.MakeJWT(user.ID.String(), c.jwtSecret, maxExpire)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "couldn't create JWT")
+		respondError(w, http.StatusInternalServerError, ErrCreateJWT)
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "couldn't create refresh token")
+		respondError(w, http.StatusInternalServerError, ErrCreateRefreshToken)
 		return
 	}
 
@@ -54,7 +62,7 @@ func (c *config) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Value:     refreshToken,
 		ExpiresAt: timeToPgType(expiresAt),
 	}); err != nil {
-		respondError(w, http.StatusInternalServerError, "couldn't write refresh token")
+		respondError(w, http.StatusInternalServerError, ErrWriteRefreshToken)
 		return
 	}
 

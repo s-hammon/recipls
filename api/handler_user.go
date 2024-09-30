@@ -11,6 +11,11 @@ import (
 	"github.com/s-hammon/recipls/internal/database"
 )
 
+const (
+	ErrCreateUserRequest = "please provide name, email, & password"
+	ErrCreateUser        = "couldn't create user"
+)
+
 func (c *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name     string `json:"name"`
@@ -26,13 +31,13 @@ func (c *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if params.Email == "" || params.Name == "" || params.Password == "" {
-		respondError(w, http.StatusBadRequest, "please provide name, email, & password")
+		respondError(w, http.StatusBadRequest, ErrCreateUserRequest)
 		return
 	}
 
 	pwd, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "couldn't create user")
+		respondError(w, http.StatusInternalServerError, ErrCreateUser)
 		return
 	}
 
@@ -60,14 +65,14 @@ func (c *config) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 func (c *config) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	id, err := getRequestID(r)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid id parameter")
+		respondError(w, http.StatusBadRequest, ErrRequestID)
 		return
 	}
 
 	userDB, err := c.DB.GetUserByID(r.Context(), uuidToPgType(id))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			respondError(w, http.StatusNotFound, "user not found")
+			respondError(w, http.StatusNotFound, ErrFetchUser)
 			return
 		}
 	}

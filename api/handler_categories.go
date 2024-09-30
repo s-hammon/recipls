@@ -4,10 +4,12 @@ import (
 	"net/http"
 )
 
+const ErrFetchCategories = "couldn't fetch categories"
+
 func (c *config) handlerGetCategories(w http.ResponseWriter, r *http.Request) {
 	categoriesDB, err := c.DB.GetCategories(r.Context())
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "couldn't fetch categories")
+		respondError(w, http.StatusInternalServerError, ErrFetchCategories)
 		return
 	}
 
