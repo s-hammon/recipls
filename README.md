@@ -5,7 +5,7 @@
 
 ## *Just the recipe, please*
 
-Aren't you sick of searching online for a recipe, only to find that your top 10 results are webpages that lead with gigantic prose and contain endless ads which leave you starving to death? I sure am. This project is a back-end web service for storing and sharing not a bit more than just the recipe.
+Aren't you sick of searching online for a recipe, only to find that your top 10 results are webpages that lead with gigantic prose and contain endless ads which leave you starving to death? I sure am. This project is a back-end web service for storing and sharing not a bunch more than just the recipe. Users will be able to rank the difficulty of their recipe, assign them to a category, provide the necessary ingredients, and instructions to create the food item--no blabby story, RAM-intensive ads, or anything like that.
 
 ## Installation
 
@@ -127,3 +127,7 @@ This project requires an installation of [Go](https://go.dev/) 1.23+ and [Postgr
     * Gosec
     * Style/format/lint
 * Streamline Docker image build
+
+## Contributing
+
+To contribute, clone the repo as described above in **Installation**. Please fork the repository and open a pull request to the `main` branch.
