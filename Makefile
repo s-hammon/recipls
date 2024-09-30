@@ -1,7 +1,7 @@
 include .env
 
 build:
-	@go build -o out
+	@GOOS=linux GOARCH=amd64 go build -o out
 
 run: build
 	@./out

@@ -30,12 +30,12 @@ var (
 func main() {
 	flag.Parse()
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	dbURL := os.Getenv("CONN_STRING")
+	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("CONN_STRING must be set")
+		log.Fatal("DATABASE_URL must be set")
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")

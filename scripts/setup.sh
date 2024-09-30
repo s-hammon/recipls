@@ -32,7 +32,7 @@ if [ -z "$1" ]; then
 fi
 
 {
-    echo "CONN_STRING=\"$1\""
+    echo "DATABASE_URL=\"$1\""
     echo "SCHEMA_DIR=sql/schema"
     echo "DRIVER=postgres"
     echo "JWT_SECRET=\"$(openssl rand -base64 64)\""
