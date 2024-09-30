@@ -49,7 +49,9 @@ This project requires an installation of [Go](https://go.dev/) 1.23+ and [Postgr
     scripts/setup.sh "host=<host> port=<port> user=<username> password=<password> dbname=<dbname> sslmode=disable"
     ```
 
-    2b. This will create a starter `.env` file, as well as install `goose` and `sqlc`. The latter is only important for development, but `goose` is necessary to migrate the database. Verify that both are installed:
+    2b. This will create a starter `.env` file, as well as install `goose` and `sqlc`. The latter is only important for development, but `goose` is necessary to migrate the database. 
+
+    2c. Verify that both are installed:
 
     ```bash
     goose --version     # goose version: v3.22.1
@@ -103,3 +105,25 @@ This project requires an installation of [Go](https://go.dev/) 1.23+ and [Postgr
 |GET|`/v1/healthz`|none|Server health check--`200 StatusOK` if a-okay|
 |GET|`/v1/categories`|none|Gets a list of available categories with which to categorize recipes.|
 |GET|`/v1/metrics`|`api_token`|Presently available to a user with their `api_token`, returns a list of all users and the number of recipes they have published, as well as a list of all recipes and the number of steps in their instructions. (kind of boring, definitely want to expand this endpoint)|
+
+## TODO
+
+### Features
+
+* Include photo of recipe results
+* Add icons for required/special equipment
+* Allow options to include common "gotchas" for certain instruction steps
+* Enable user-specific RSS feeds
+
+### Functionality
+
+* Abstract service layer from handlers and repository (to enable testing of former two)
+    * This in turn will allow functionality for other database engines
+
+### CI/CD
+
+* Add Github integration workflows
+    * Test (after abstraction/more tests are made)
+    * Gosec
+    * Style/format/lint
+* Streamline Docker image build
